@@ -112,7 +112,8 @@ export default class NetSpeed extends Extension {
     this._timeout = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT, refreshInterval, () => {
         const speed = this.getCurrentNetSpeed(refreshInterval);
-        const text = toSpeedString(speed);
+        const nfConntrackCount = this.getNFConntrackCount();
+        const text = `${toSpeedString(speed)} C:${nfConntrackCount}`;
         // console.log(text);
         this._indicator.setText(text);
         // Run as loop, not once.
@@ -182,5 +183,17 @@ export default class NetSpeed extends Extension {
     }
 
     return speed;
+  }
+
+  getNFConntrackCount = () => {
+    try {
+      const inputFile = Gio.File.new_for_path("/proc/sys/net/netfilter/nf_conntrack_count");
+      const [, content] = inputFile.load_contents(null);
+      const nfConntrackCount = new TextDecoder().decode(content).trim();
+      return nfConntrackCount;
+    } catch (e) {
+      // console.error(e);
+      return "?";
+    }
   }
 };
